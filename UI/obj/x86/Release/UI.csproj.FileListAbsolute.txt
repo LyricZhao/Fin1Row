@@ -1,0 +1,7 @@
+/Users/zhangjunqi/Desktop/AI_Project/AI_project_mac/UI/bin/Release/UI.exe
+/Users/zhangjunqi/Desktop/AI_Project/AI_project_mac/UI/obj/x86/Release/UI.CompeteMode.resources
+/Users/zhangjunqi/Desktop/AI_Project/AI_project_mac/UI/obj/x86/Release/UI.MainFrame.resources
+/Users/zhangjunqi/Desktop/AI_Project/AI_project_mac/UI/obj/x86/Release/UI.Properties.Resources.resources
+/Users/zhangjunqi/Desktop/AI_Project/AI_project_mac/UI/obj/x86/Release/UI.csproj.GenerateResource.cache
+/Users/zhangjunqi/Desktop/AI_Project/AI_project_mac/UI/obj/x86/Release/UI.csproj.CoreCompileInputs.cache
+/Users/zhangjunqi/Desktop/AI_Project/AI_project_mac/UI/obj/x86/Release/UI.exe

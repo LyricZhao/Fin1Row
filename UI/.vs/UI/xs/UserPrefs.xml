@@ -1,0 +1,28 @@
+﻿<Properties StartupConfiguration="{C6916438-D203-43B8-A176-2062FE77454E}|Default">
+  <MonoDevelop.Ide.Workbench ActiveDocument="UI.csproj">
+    <Files>
+      <File FileName="Strategy.cs" Line="34" Column="17" />
+      <File FileName="Data.cs" Line="63" Column="40" />
+      <File FileName="Properties/AssemblyInfo.cs" Line="8" Column="12" />
+      <File FileName="UI.csproj" Line="15" Column="45" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="UI" expanded="True" selected="True">
+            <Node name="UI" expanded="True">
+              <Node name="Properties" expanded="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.ItemProperties.UI PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release|x86" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations />
+</Properties>

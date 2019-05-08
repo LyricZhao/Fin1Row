@@ -1,4 +1,5 @@
 APP = strategy
+HPP = UCT.hpp
 OBJECTS = Judge.o Strategy.o
 OUTPUTS = outputs/*
 
@@ -14,9 +15,9 @@ default:
 
 run:
 	make $(APP) -s
-	../Compete/bin/Compete ../Testcases/$(CASE).dylib ./strategy.dylib outputs/result.txt 5
+	../Compete/bin/Compete ../Testcases/$(CASE).dylib ./strategy.dylib outputs/result.txt 1
 
-$(APP): $(OBJECTS) Makefile
+$(APP): $(OBJECTS) $(HPP) Makefile
 	echo 'Linking: $(APP)' && \
 	$(CXXC) $(LINKFLAGS) $(OBJECTS) -o $(APP).dylib
 

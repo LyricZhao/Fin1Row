@@ -3,6 +3,8 @@
 #include "Point.h"
 #include "Strategy.h"
 
+#include "UCT.hpp" // Modified
+
 using namespace std;
 
 /*
@@ -44,7 +46,9 @@ extern "C" Point* getPoint(const int M, const int N, const int* top, const int* 
 		根据你自己的策略来返回落子点,也就是根据你的策略完成对x,y的赋值
 		该部分对参数使用没有限制，为了方便实现，你可以定义自己新的类、.h文件、.cpp文件
 	*/
+	
 	//Add your own code below
+	/*
 	for (int i = N-1; i >= 0; i--) {
 		if (top[i] > 0) {
 			x = top[i] - 1;
@@ -52,6 +56,12 @@ extern "C" Point* getPoint(const int M, const int N, const int* top, const int* 
 			break;
 		}
 	}
+	*/
+
+	/* My own codes begin */
+	init(M, N, lastX, lastY, noX, noY, board);
+	y = calc(); x = top[y] - 1;
+	/* My own codes end */
 	
 	/*
 		不要更改这段代码

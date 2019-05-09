@@ -58,8 +58,8 @@ extern "C" Point* getPoint(const int M, const int N, const int* top, const int* 
 	}
 	*/
 
-	/* My own codes begin */
-	srand(19981011);
+	/* My own codes begin */ 
+	srand(19990702);
 	init(M, N, lastX, lastY, noX, noY, board);
 	y = calc(); x = top[y] - 1;
 	/* My own codes end */

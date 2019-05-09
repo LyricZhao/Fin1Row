@@ -2,9 +2,9 @@
 # define MAX_ROWS 12
 # define MAX_ACTIONS 200
 # define MAX_STATES (1 << 20)
-# define TIME_LIMIT 2.0
-# define RAND_LIMIT (1 << 12)
-# define VITALITY_COEFFICIENT 0.85
+# define TIME_LIMIT 0.5
+# define RAND_LIMIT (1 << 30)
+# define VITALITY_COEFFICIENT 0.80
 
 # define USR_INDEX 1
 # define MCH_INDEX 2
@@ -25,6 +25,7 @@
 
 # include "Judge.h"
 
+const float eps = 1e-6;
 char display[4] = {'.', 'A', 'B', 'X'};
 
 int node_tot = 0;
@@ -197,7 +198,7 @@ void clear() {
     memset(cn, 0, sizeof(int) * node_tot);
     memset(fa, 0, sizeof(int) * node_tot);
     memset(depth, 0, sizeof(int) * node_tot);
-    memset(cq, 0, sizeof(double) * node_tot);
+    memset(cq, 0, sizeof(float) * node_tot);
     node_tot = 1;
     return;
 }
@@ -209,13 +210,13 @@ void init(int m, int n, int la_x, int la_y, int nox, int noy, int **board) {
     return;
 }
 
-int bestChild(int v, double c) {
+int bestChild(int v, float c) {
     int best = -1, ch;
-    double max_profit = -1e7;
+    float max_profit = -1e7;
     for (int i = 0; i < state.n; ++ i) {
         ch = nodes[v][i];
-        if(ch) {
-            double profit = ((depth[ch] & 1) ? 1.0 : -1.0) * cq[ch] / cn[ch] + c * sqrt(2.0 * log(cn[v]) / cn[ch]);
+        if (ch) {
+            float profit = ((depth[ch] & 1) ? 1.0 : -1.0) * cq[ch] / cn[ch] + c * sqrt(2.0 * log(cn[v]) / cn[ch]);
             if (profit > max_profit) {
                 max_profit = profit;
                 best = i;
@@ -274,6 +275,6 @@ int calc() {
         backup(vl, delta);
         state.copy(origin);
     }
-    // std:: cerr << "MTCS Times: " << count - 1 << std:: endl;
+    std:: cerr << "MTCS Times: " << count - 1 << std:: endl;
     return bestChild(0, 0);
 }

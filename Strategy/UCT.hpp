@@ -3,15 +3,15 @@
 # define MAX_ACTIONS 200
 # define MAX_STATES (1 << 20)
 # define TIME_LIMIT 2.0
-# define RAND_LIMIT (1 << 15)
-# define VITALITY_COEFFICIENT 0.8
+# define RAND_LIMIT (1 << 12)
+# define VITALITY_COEFFICIENT 0.85
 
 # define USR_INDEX 1
 # define MCH_INDEX 2
 # define TIE_INDEX 3
 
-# define USR_WIN_PROFIT  1
-# define MCH_WIN_PROFIT -1
+# define USR_WIN_PROFIT -1
+# define MCH_WIN_PROFIT  1
 # define TIE_PROFIT 0
 
 # include <ctime>
@@ -28,8 +28,7 @@
 char display[4] = {'.', 'A', 'B', 'X'};
 
 int node_tot = 0;
-int nodes[MAX_STATES][MAX_COLS], cn[MAX_STATES], fa[MAX_STATES];
-double cq[MAX_STATES];
+int nodes[MAX_STATES][MAX_COLS], cn[MAX_STATES], fa[MAX_STATES], depth[MAX_STATES], cq[MAX_STATES];
 
 /*
  *  Board definition
@@ -96,6 +95,7 @@ struct Board {
     }
     void place(int x, int player) {
         int y = top[x];
+        la_x = x, la_y = y;
         board[m - y - 1][x] = player;
         top[x] = getTop(x);
         return;
@@ -176,6 +176,7 @@ void clear() {
     memset(nodes, 0, sizeof(int) * MAX_COLS * node_tot);
     memset(cn, 0, sizeof(int) * node_tot);
     memset(fa, 0, sizeof(int) * node_tot);
+    memset(depth, 0, sizeof(int) * node_tot);
     memset(cq, 0, sizeof(double) * node_tot);
     node_tot = 1;
     return;
@@ -190,11 +191,11 @@ void init(int m, int n, int la_x, int la_y, int nox, int noy, int **board) {
 
 int bestChild(int v, double c) {
     int best = -1, ch;
-    double max_profit = -1;
+    double max_profit = -1e7;
     for (int i = 0; i < state.n; ++ i) {
         ch = nodes[v][i];
         if(ch) {
-            double profit = ((double)(cq[ch])) / cn[ch] + c * sqrt(2.0 * log(cn[v]) / cn[ch]);
+            double profit = ((depth[ch] & 1) ? 1.0 : -1.0) * cq[ch] / cn[ch] + c * sqrt(2.0 * log(cn[v]) / cn[ch]);
             if (profit > max_profit) {
                 max_profit = profit;
                 best = i;
@@ -204,8 +205,9 @@ int bestChild(int v, double c) {
     return best;
 }
 
-int expand(int v, int action) {
+inline int expand(int v, int action) {
     nodes[v][action] = node_tot;
+    depth[node_tot] = depth[v] + 1;
     fa[node_tot ++] = v;
     state.take(action);
     return node_tot - 1;
@@ -229,7 +231,6 @@ void backup(int v, double delta) {
     while (true) {
         cn[v] += 1;
         cq[v] += delta;
-        delta = -delta;
         if (v == 0) break;
         v = fa[v];
     }

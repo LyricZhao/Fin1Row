@@ -125,7 +125,25 @@ struct Board {
         term = 3;
         return true;
     }
+    int mustAction() {
+        int action = -1, y;
+        for (int i = 0; i < n; ++ i) {
+            if (top[i] != -1) {
+                y = top[i];
+                board[m - y - 1][i] = next;
+                bool usr_win = false, mch_win = false;
+                if (next == USR_INDEX) usr_win = userWin(m - y - 1, i, m, n, (int* const *)board);
+                if (next == MCH_INDEX) mch_win = machineWin(m - y - 1, i, m, n, (int* const*)board);
+                board[m - y - 1][i] = 0;
+                if (!usr_win && !mch_win) continue;
+                return action;
+            }
+        }
+        return action;
+    }
     int expandState(int v) {
+        int must = mustAction();
+        if (must != -1) return must;
         std:: vector<int> availables;
         for (int i = 0; i < n; ++ i) {
             if (top[i] != -1 && !nodes[v][i]) {
@@ -138,6 +156,8 @@ struct Board {
         return availables[rand() % availables.size()];
     }
     int randomAction() {
+        int must = mustAction();
+        if (must != -1) return must;
         std:: vector<int> availables;
         for (int i = 0; i < n; ++ i) {
             if (top[i] != -1) {
@@ -146,12 +166,12 @@ struct Board {
         }
         return availables[rand() % availables.size()];
     }
-    double profit() {
+    int profit() {
         if (term == USR_INDEX) return USR_WIN_PROFIT;
         if (term == MCH_INDEX) return MCH_WIN_PROFIT;
         if (term == TIE_INDEX) return TIE_PROFIT;
         assert(0);
-        return 1e7;
+        return -1;
     }
     void take(int action) {
         place(action, next);
@@ -227,7 +247,7 @@ int treePolicy(int v) {
     return v;
 }
 
-void backup(int v, double delta) {
+void backup(int v, int delta) {
     while (true) {
         cn[v] += 1;
         cq[v] += delta;
@@ -237,7 +257,7 @@ void backup(int v, double delta) {
     return;
 }
 
-double defaultPolicy(int v) {
+int defaultPolicy(int v) {
     while (!state.terminal()) {
         int action = state.randomAction();
         state.take(action);
@@ -250,9 +270,10 @@ int calc() {
     int count = 0;
     while ((clock() - start_time) / CLOCKS_PER_SEC < TIME_LIMIT && (count ++ ) < RAND_LIMIT) {
         int vl = treePolicy(0);
-        double delta = defaultPolicy(vl);
+        int delta = defaultPolicy(vl);
         backup(vl, delta);
         state.copy(origin);
     }
+    // std:: cerr << "MTCS Times: " << count - 1 << std:: endl;
     return bestChild(0, 0);
 }

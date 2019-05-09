@@ -4,7 +4,7 @@ OBJECTS = Judge.o Strategy.o
 OUTPUTS = outputs/*
 
 CXXC = g++
-CXXFLAGS = -std=c++11 -O3 -arch i386 -m32
+CXXFLAGS = -std=c++11 -Os -arch i386 -m32
 LINKFLAGS = -arch i386 -m32 -dynamiclib
 
 DEL = rm -rf
@@ -15,7 +15,7 @@ default:
 
 run:
 	make $(APP) -s
-	../Compete/bin/Compete ../Testcases/$(CASE).dylib ./strategy.dylib outputs/result.txt 6
+	../Compete/bin/Compete ../Testcases/$(CASE).dylib ./strategy.dylib outputs/result.txt $(TIMES)
 
 $(APP): $(OBJECTS) $(HPP) Makefile
 	echo 'Linking: $(APP)' && \

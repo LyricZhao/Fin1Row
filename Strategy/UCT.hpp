@@ -230,14 +230,7 @@ int bestChild(int v, float c) {
             bests.push_back(i);
         }
     }
-    int mid = state.n >> 1, min_abs = 0x7fff;
-    for (int i = 0; i < bests.size(); ++ i) {
-        int _abs = myAbs(bests[i] - mid);
-        if (_abs < min_abs) {
-            min_abs = _abs, best = bests[i];
-        }
-    }
-    return best;
+    return bests[bests.size() >> 1];
 }
 
 inline int expand(int v, int action) {

@@ -2,8 +2,8 @@
 # define MAX_ROWS 12
 # define MAX_ACTIONS 200
 # define MAX_STATES (1 << 20)
-# define TIME_LIMIT 0.5
-# define RAND_LIMIT (1 << 30)
+# define TIME_LIMIT 2
+# define RAND_LIMIT (1 << 20)
 # define VITALITY_COEFFICIENT 0.80
 
 # define USR_INDEX 1
@@ -30,6 +30,7 @@ char display[4] = {'.', 'A', 'B', 'X'};
 
 int node_tot = 0;
 int nodes[MAX_STATES][MAX_COLS], cn[MAX_STATES], fa[MAX_STATES], depth[MAX_STATES], cq[MAX_STATES];
+float tmp_profit[MAX_COLS];
 
 /*
  *  Board definition
@@ -210,17 +211,30 @@ void init(int m, int n, int la_x, int la_y, int nox, int noy, int **board) {
     return;
 }
 
+inline int myAbs(int x) {
+    return x > 0 ? x : -x;
+}
+
 int bestChild(int v, float c) {
     int best = -1, ch;
     float max_profit = -1e7;
+    std:: vector<int> bests;
     for (int i = 0; i < state.n; ++ i) {
         ch = nodes[v][i];
-        if (ch) {
-            float profit = ((depth[ch] & 1) ? 1.0 : -1.0) * cq[ch] / cn[ch] + c * sqrt(2.0 * log(cn[v]) / cn[ch]);
-            if (profit > max_profit) {
-                max_profit = profit;
-                best = i;
-            }
+        if (ch) tmp_profit[i] = ((depth[ch] & 1) ? 1.0 : -1.0) * cq[ch] / cn[ch] + c * sqrt(2.0 * log(cn[v]) / cn[ch]);
+        else tmp_profit[i] = -1e9;
+        if (tmp_profit[i] > max_profit) max_profit = tmp_profit[i];
+    }
+    for (int i = 0; i < state.n; ++ i) {
+        if (fabs(tmp_profit[i] - max_profit) < eps) {
+            bests.push_back(i);
+        }
+    }
+    int mid = state.n >> 1, min_abs = 0x7fff;
+    for (int i = 0; i < bests.size(); ++ i) {
+        int _abs = myAbs(bests[i] - mid);
+        if (_abs < min_abs) {
+            min_abs = _abs, best = bests[i];
         }
     }
     return best;
@@ -267,14 +281,16 @@ int defaultPolicy(int v) {
 }
 
 int calc() {
+    std:: cerr << "Calculating ... ";
     clock_t start_time = clock();
     int count = 0;
-    while ((clock() - start_time) / CLOCKS_PER_SEC < TIME_LIMIT && (count ++ ) < RAND_LIMIT) {
+    while (((double)(clock() - start_time)) / CLOCKS_PER_SEC < TIME_LIMIT && (count ++ ) < RAND_LIMIT) {
         int vl = treePolicy(0);
         int delta = defaultPolicy(vl);
         backup(vl, delta);
         state.copy(origin);
     }
-    std:: cerr << "MTCS Times: " << count - 1 << std:: endl;
-    return bestChild(0, 0);
+    int action = bestChild(0, 0);
+    std:: cerr << "done! (" << count - 1 << " times, " << 1.0 * cn[nodes[0][action]] / cn[0] << " confidence)" << std:: endl;
+    return action;
 }

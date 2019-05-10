@@ -1,10 +1,12 @@
 # define MAX_COLS 12
 # define MAX_ROWS 12
 # define MAX_ACTIONS 200
-# define MAX_STATES (1 << 20)
+# define MAX_STATES (1 << 23)
 # define TIME_LIMIT 2
-# define RAND_LIMIT (1 << 20)
+# define RAND_LIMIT (1 << 30)
 # define VITALITY_COEFFICIENT 0.80
+
+# define MUST_OPT
 
 # define USR_INDEX 1
 # define MCH_INDEX 2
@@ -14,12 +16,14 @@
 # define MCH_WIN_PROFIT  1
 # define TIE_PROFIT 0
 
+# include <set>
 # include <ctime>
 # include <cmath>
 # include <cstdio>
 # include <vector>
 # include <cstring>
 # include <cassert>
+# include <stack>
 # include <iostream>
 # include <algorithm>
 
@@ -28,9 +32,10 @@
 const float eps = 1e-6;
 char display[4] = {'.', 'A', 'B', 'X'};
 
-int node_tot = 0;
-int nodes[MAX_STATES][MAX_COLS], cn[MAX_STATES], fa[MAX_STATES], depth[MAX_STATES], cq[MAX_STATES];
-float tmp_profit[MAX_COLS];
+int last_action, root, mch_node_trans, usr_node_trans, usr_last_action;
+std:: stack<int> available_ids;
+int nodes[MAX_STATES][MAX_COLS], cn[MAX_STATES], fa[MAX_STATES], depth[MAX_STATES];
+float cq[MAX_STATES], tmp_profit[MAX_COLS];
 
 /*
  *  Board definition
@@ -60,6 +65,7 @@ struct Board {
         return;
     }
     void copy(const Board &origin) {
+        n = origin.n, m = origin.m, nox = origin.nox, noy = origin.noy;
         la_x = origin.la_x, la_y = origin.la_y, next = origin.next, term = origin.term;
         for (int i = 0; i < m; ++ i) {
             memcpy(board[i], origin.board[i], sizeof(int) * n);
@@ -76,6 +82,7 @@ struct Board {
         return -1;
     }
     void init(int _m, int _n, int _la_x, int _la_y, int _nox, int _noy, int **_board) {
+        clear();
         m = _m, n = _n, nox = _noy, noy = _m - _nox - 1;
         term = 0, next = MCH_INDEX, la_x = _la_y, la_y = m - _la_x - 1;
         board = new int*[m];
@@ -97,6 +104,7 @@ struct Board {
     }
     void place(int x, int player) {
         int y = top[x];
+        assert(y != -1);
         la_x = x, la_y = y;
         board[m - y - 1][x] = player;
         top[x] = getTop(x);
@@ -128,7 +136,7 @@ struct Board {
         return true;
     }
     int mustAction() {
-        int action = -1, y;
+        int y;
         for (int i = 0; i < n; ++ i) {
             if (top[i] != -1) {
                 y = top[i];
@@ -138,14 +146,16 @@ struct Board {
                 if (next == MCH_INDEX) mch_win = machineWin(m - y - 1, i, m, n, (int* const*)board);
                 board[m - y - 1][i] = 0;
                 if (!usr_win && !mch_win) continue;
-                return action;
+                return i;
             }
         }
-        return action;
+        return -1;
     }
     int expandState(int v) {
-        int must = mustAction();
-        if (must != -1) return must;
+        # ifdef MUST_OPT
+            int must = mustAction();
+            if (must != -1) return must;
+        # endif
         std:: vector<int> availables;
         for (int i = 0; i < n; ++ i) {
             if (top[i] != -1 && !nodes[v][i]) {
@@ -158,8 +168,10 @@ struct Board {
         return availables[rand() % availables.size()];
     }
     int randomAction() {
-        int must = mustAction();
-        if (must != -1) return must;
+        # ifdef MUST_OPT
+            int must = mustAction();
+            if (must != -1) return must;
+        # endif
         std:: vector<int> availables;
         for (int i = 0; i < n; ++ i) {
             if (top[i] != -1) {
@@ -176,6 +188,7 @@ struct Board {
         return -1;
     }
     void take(int action) {
+        assert(top[action] != -1);
         place(action, next);
         next = 3 - next;
         return;
@@ -190,43 +203,70 @@ struct Board {
         }
         return;
     }
-} state, origin;
+    bool initState() {
+        for (int i = 0; i < m; ++ i) {
+            for (int j = 0; j < n; ++ j) {
+                if (board[i][j] == MCH_INDEX) return false;
+            }
+        }
+        return true;
+    }
+    int contain(Board &last) {
+        if (nox != last.nox || noy != last.noy || n != last.n || m != last.m) return -1;
+        int a_count = 0, b_count = 0, usr_action;
+        for (int i = 0; i < m; ++ i) {
+            for (int j = 0; j < n; ++ j) {
+                if ((last.board[i][j] | board[i][j]) != board[i][j]) return -1;
+                if (last.board[i][j] != board[i][j]) {
+                    a_count += (board[i][j] == USR_INDEX);
+                    b_count += (board[i][j] == MCH_INDEX);
+                    if (board[i][j] == USR_INDEX) usr_action = j;
+                }
+            }
+        }
+        if(a_count == 1 && b_count == 1) {
+            return usr_action;
+        }
+        return -1;
+    }
+} state, origin, last;
 
+/* All global clear */
 void clear() {
-    state.clear();
-    origin.clear();
-    memset(nodes, 0, sizeof(int) * MAX_COLS * node_tot);
-    memset(cn, 0, sizeof(int) * node_tot);
-    memset(fa, 0, sizeof(int) * node_tot);
-    memset(depth, 0, sizeof(int) * node_tot);
-    memset(cq, 0, sizeof(float) * node_tot);
-    node_tot = 1;
+    root = 1;
+    cn[1] = cq[1] = fa[1] = depth[1] = 0;
+    memset(nodes[1], 0, sizeof(int) * MAX_COLS);
+    while(!available_ids.empty()) available_ids.pop();
+    for (int i = MAX_STATES - 1; i > 1; -- i) available_ids.push(i);
     return;
 }
 
 void init(int m, int n, int la_x, int la_y, int nox, int noy, int **board) {
-    clear();
+    usr_last_action = la_y;
     state.init(m, n, la_x, la_y, nox, noy, board);
     origin.init(m, n, la_x, la_y, nox, noy, board);
+    if (origin.initState()) {
+        clear();
+        last.init(m, n, la_x, la_y, nox, noy, board);
+        last.n = -1;
+    }
     return;
 }
 
-inline int myAbs(int x) {
-    return x > 0 ? x : -x;
-}
-
 int bestChild(int v, float c) {
-    int best = -1, ch;
-    float max_profit = -1e7;
+    int ch;
+    float max_profit = -1e10;
     std:: vector<int> bests;
     for (int i = 0; i < state.n; ++ i) {
         ch = nodes[v][i];
-        if (ch) tmp_profit[i] = ((depth[ch] & 1) ? 1.0 : -1.0) * cq[ch] / cn[ch] + c * sqrt(2.0 * log(cn[v]) / cn[ch]);
-        else tmp_profit[i] = -1e9;
+        if (ch) {
+            tmp_profit[i] = ((depth[ch] & 1) ? 1.0 : -1.0) * cq[ch] / cn[ch] + c * sqrt(2.0 * log(cn[v]) / cn[ch]);
+        }
+        else tmp_profit[i] = -1e13;
         if (tmp_profit[i] > max_profit) max_profit = tmp_profit[i];
     }
     for (int i = 0; i < state.n; ++ i) {
-        if (fabs(tmp_profit[i] - max_profit) < eps) {
+        if (nodes[v][i] && fabs(tmp_profit[i] - max_profit) < eps) {
             bests.push_back(i);
         }
     }
@@ -234,11 +274,15 @@ int bestChild(int v, float c) {
 }
 
 inline int expand(int v, int action) {
-    nodes[v][action] = node_tot;
-    depth[node_tot] = depth[v] + 1;
-    fa[node_tot ++] = v;
+    int id = available_ids.top();
+    available_ids.pop();
+    nodes[v][action] = id;
+    depth[id] = depth[v] ^ 1;
+    fa[id] = v, cn[id] = cq[id] = 0;
+    memset(nodes[id], 0, sizeof(int) * MAX_COLS);
+    if (state.getTop(action) == -1) assert(0);
     state.take(action);
-    return node_tot - 1;
+    return id;
 }
 
 int treePolicy(int v) {
@@ -248,6 +292,7 @@ int treePolicy(int v) {
             return expand(v, action);
         } else {
             action = bestChild(v, VITALITY_COEFFICIENT);
+            assert(state.top[action] != -1);
             state.take(action);
             v = nodes[v][action];
         }
@@ -259,7 +304,7 @@ void backup(int v, int delta) {
     while (true) {
         cn[v] += 1;
         cq[v] += delta;
-        if (v == 0) break;
+        if (v == root) break;
         v = fa[v];
     }
     return;
@@ -273,17 +318,50 @@ int defaultPolicy(int v) {
     return state.profit();
 }
 
+void transferDFS(int v) {
+    int ch;
+    for (int i = 0; i < state.n; ++ i) {
+        ch = nodes[v][i];
+        if (ch) {
+            if (ch == usr_node_trans) {
+                continue;
+            }
+            transferDFS(ch);
+        }
+    }
+    memset(nodes[v], 0, sizeof(int) * MAX_COLS);
+    available_ids.push(v);
+    return;
+}
+
 int calc() {
+    int usr_step = origin.contain(last);
+    float reused_ratio = 0;
+    if (usr_step != -1) {
+        mch_node_trans = nodes[root][last_action];
+        usr_node_trans = nodes[mch_node_trans][usr_step];
+        if (!mch_node_trans || !usr_node_trans) {
+            clear();
+        } else {
+            reused_ratio = 1.0 * cn[usr_node_trans] / cn[root];
+            transferDFS(root);
+            root = usr_node_trans;
+            fa[root] = depth[root] = 0;
+        }
+    }
+
     std:: cerr << "Calculating ... ";
     clock_t start_time = clock();
     int count = 0;
     while (((double)(clock() - start_time)) / CLOCKS_PER_SEC < TIME_LIMIT && (count ++ ) < RAND_LIMIT) {
-        int vl = treePolicy(0);
+        int vl = treePolicy(root);
         int delta = defaultPolicy(vl);
         backup(vl, delta);
         state.copy(origin);
     }
-    int action = bestChild(0, 0);
-    std:: cerr << "done! (" << count - 1 << " times, " << 1.0 * cn[nodes[0][action]] / cn[0] << " confidence)" << std:: endl;
+    int action = bestChild(root, 0);
+    std:: cerr << "done! (" << count - 1 << " times, " << 1.0 * cn[nodes[root][action]] / cn[root] << " confidence, " << reused_ratio << " reused, " << cn[root] << " nodes)" << std:: endl;
+    last.copy(origin);
+    last_action = action;
     return action;
 }

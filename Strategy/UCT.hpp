@@ -133,22 +133,6 @@ struct Board {
         term = 3;
         return true;
     }
-    int mustAction() {
-        int y;
-        for (int i = 0; i < n; ++ i) {
-            if (top[i] != -1) {
-                y = top[i];
-                board[m - y - 1][i] = next;
-                bool usr_win = false, mch_win = false;
-                if (next == USR_INDEX) usr_win = userWin(m - y - 1, i, m, n, (int* const *)board);
-                if (next == MCH_INDEX) mch_win = machineWin(m - y - 1, i, m, n, (int* const*)board);
-                board[m - y - 1][i] = 0;
-                if (!usr_win && !mch_win) continue;
-                return i;
-            }
-        }
-        return -1;
-    }
     int expandState(int v) {
         std:: vector<int> availables;
         for (int i = 0; i < n; ++ i) {

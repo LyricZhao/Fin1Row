@@ -5,7 +5,7 @@ OUTPUTS = outputs/*
 
 CXXC = g++
 CXXFLAGS = -std=c++11 -O3 -arch i386 -m32
-LINKFLAGS = -arch i386 -m32 -dynamiclib
+LINKFLAGS = -arch i386 -m32 -dynamiclib -O3
 
 DEL = rm -rf
 
@@ -16,6 +16,10 @@ default:
 run:
 	make $(APP) -s
 	../Compete/bin/Compete ../Testcases/$(CASE).dylib ./strategy.dylib outputs/result.txt $(TIMES)
+
+lx:
+	make $(APP) -s
+	../Compete/bin/Compete ~/Desktop/lx.dylib ./strategy.dylib outputs/result.txt $(TIMES)
 
 $(APP): $(OBJECTS) $(HPP) Makefile
 	echo 'Linking: $(APP)' && \

@@ -2,11 +2,9 @@
 # define MAX_ROWS 12
 # define MAX_ACTIONS 200
 # define MAX_STATES (1 << 23)
-# define TIME_LIMIT 2
-# define RAND_LIMIT (1 << 19)
+# define TIME_LIMIT 2.7
+# define RAND_LIMIT (1 << 20)
 # define VITALITY_COEFFICIENT 0.80
-
-# define MUST_OPT
 
 # define USR_INDEX 1
 # define MCH_INDEX 2
@@ -35,6 +33,8 @@ int last_action, root, mch_node_trans, usr_node_trans, usr_last_action;
 std:: stack<int> available_ids;
 int nodes[MAX_STATES][MAX_COLS], cn[MAX_STATES], fa[MAX_STATES], depth[MAX_STATES];
 float cq[MAX_STATES], tmp_profit[MAX_COLS];
+
+clock_t start_time;
 
 /*
  *  Board definition
@@ -103,7 +103,6 @@ struct Board {
     }
     void place(int x, int player) {
         int y = top[x];
-        assert(y != -1);
         la_x = x, la_y = y;
         board[m - y - 1][x] = player;
         top[x] = getTop(x);
@@ -151,10 +150,6 @@ struct Board {
         return -1;
     }
     int expandState(int v) {
-        # ifdef MUST_OPT
-            int must = mustAction();
-            if (must != -1) return must;
-        # endif
         std:: vector<int> availables;
         for (int i = 0; i < n; ++ i) {
             if (top[i] != -1 && !nodes[v][i]) {
@@ -167,10 +162,6 @@ struct Board {
         return availables[rand() % availables.size()];
     }
     int randomAction() {
-        # ifdef MUST_OPT
-            int must = mustAction();
-            if (must != -1) return must;
-        # endif
         std:: vector<int> availables;
         for (int i = 0; i < n; ++ i) {
             if (top[i] != -1) {
@@ -187,7 +178,6 @@ struct Board {
         return -1;
     }
     void take(int action) {
-        assert(top[action] != -1);
         place(action, next);
         next = 3 - next;
         return;
@@ -241,6 +231,7 @@ void clear() {
 }
 
 void init(int m, int n, int la_x, int la_y, int nox, int noy, int **board) {
+    start_time = clock();
     usr_last_action = la_y;
     state.init(m, n, la_x, la_y, nox, noy, board);
     origin.init(m, n, la_x, la_y, nox, noy, board);
@@ -279,7 +270,6 @@ inline int expand(int v, int action) {
     depth[id] = depth[v] ^ 1;
     fa[id] = v, cn[id] = cq[id] = 0;
     memset(nodes[id], 0, sizeof(int) * MAX_COLS);
-    if (state.getTop(action) == -1) assert(0);
     state.take(action);
     return id;
 }
@@ -291,7 +281,6 @@ int treePolicy(int v) {
             return expand(v, action);
         } else {
             action = bestChild(v, VITALITY_COEFFICIENT);
-            assert(state.top[action] != -1);
             state.take(action);
             v = nodes[v][action];
         }
@@ -350,16 +339,15 @@ int calc() {
     }
 
     std:: cerr << "Calculating ... ";
-    clock_t start_time = clock();
     int count = 0;
-    while (((double)(clock() - start_time)) / CLOCKS_PER_SEC < TIME_LIMIT && (count ++ ) < RAND_LIMIT) {
+    while (((float)(clock() - start_time)) / CLOCKS_PER_SEC < TIME_LIMIT && (count ++ ) < RAND_LIMIT) {
         int vl = treePolicy(root);
         int delta = defaultPolicy(vl);
         backup(vl, delta);
         state.copy(origin);
     }
     int action = bestChild(root, 0);
-    std:: cerr << "done! (" << count - 1 << " times, " << 1.0 * cn[nodes[root][action]] / cn[root] << " confidence, " << reused_ratio << " reused, " << cn[root] << " nodes)" << std:: endl;
+    std:: cerr << "done! (" << count - 1 << " times, " << (1.0 * cq[root] / cn[root] + 1) / 2.0 << " confidence, " << reused_ratio << " reused, " << cn[root] << " nodes)" << std:: endl;
     last.copy(origin);
     last_action = action;
     return action;

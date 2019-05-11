@@ -3,7 +3,7 @@
 # define MAX_ACTIONS 200
 # define MAX_STATES (1 << 23)
 # define TIME_LIMIT 2
-# define RAND_LIMIT (1 << 30)
+# define RAND_LIMIT (1 << 19)
 # define VITALITY_COEFFICIENT 0.80
 
 # define MUST_OPT
@@ -16,7 +16,6 @@
 # define MCH_WIN_PROFIT  1
 # define TIE_PROFIT 0
 
-# include <set>
 # include <ctime>
 # include <cmath>
 # include <cstdio>

@@ -25,7 +25,7 @@ public:
 	int lastY;
 	
 	Data(){
-        srand(time(0));
+        srand(19981011);
         
 		M = (rand() % (maxSize - minSize)) + minSize;
 		N = (rand() % (maxSize - minSize)) + minSize;
@@ -46,7 +46,7 @@ public:
 		}
 		
 		//生成随机不可落子点
-		srand((int)time(0));
+		srand(19981011);
 		noX = rand() % M;
 		noY = rand() % N;
 		//noX = 0;

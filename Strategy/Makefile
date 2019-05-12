@@ -17,10 +17,6 @@ run:
 	make $(APP) -s
 	../Compete/bin/Compete ../Testcases/$(CASE).dylib ./strategy.dylib outputs/result.txt $(TIMES)
 
-lx:
-	make $(APP) -s
-	../Compete/bin/Compete ~/Desktop/lx.dylib ./strategy.dylib outputs/result.txt $(TIMES)
-
 $(APP): $(OBJECTS) $(HPP) Makefile
 	echo 'Linking: $(APP)' && \
 	$(CXXC) $(LINKFLAGS) $(OBJECTS) -o $(APP).dylib
